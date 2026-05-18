@@ -140,7 +140,7 @@ export const scheduleRouter = createRouter({
         source: input.source || "manual",
       });
 
-      return { id: Number(result.insertId), ...input, categoryId };
+      return { id: Number(result[0].insertId), ...input, categoryId };
     }),
 
   update: publicQuery
@@ -235,7 +235,7 @@ export const scheduleRouter = createRouter({
       }));
 
       const result = await db.insert(schedules).values(values);
-      return { inserted: values.length, firstId: Number(result.insertId) };
+      return { inserted: values.length, firstId: Number(result[0].insertId) };
     }),
 
   detectRepeats: publicQuery.query(async ({ ctx }) => {

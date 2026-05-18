@@ -115,18 +115,9 @@ function CategoryEditModal({ open, onClose, categories }: { open: boolean; onClo
   const [newIcon, setNewIcon] = useState("calendar-days");
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0]);
 
-  const createMutation = trpc.category.create.useMutation({
-    onSuccess: () => { utils.category.list.invalidate(); setNewLabel(""); },
-    onError: (err) => { alert("카테고리 추가 실패: " + err.message); },
-  });
-  const updateMutation = trpc.category.update.useMutation({
-    onSuccess: () => { utils.category.list.invalidate(); setEditingId(null); },
-    onError: (err) => { alert("카테고리 수정 실패: " + err.message); },
-  });
-  const deleteMutation = trpc.category.delete.useMutation({
-    onSuccess: () => utils.category.list.invalidate(),
-    onError: (err) => { alert("카테고리 삭제 실패: " + err.message); },
-  });
+  const createMutation = trpc.category.create.useMutation({ onSuccess: () => { utils.category.list.invalidate(); setNewLabel(""); } });
+  const updateMutation = trpc.category.update.useMutation({ onSuccess: () => { utils.category.list.invalidate(); setEditingId(null); } });
+  const deleteMutation = trpc.category.delete.useMutation({ onSuccess: () => utils.category.list.invalidate() });
 
   const startEdit = (cat: any) => { setEditingId(cat.id); setEditLabel(cat.label); setEditIcon(cat.icon || "calendar-days"); setEditColor(cat.color || COLOR_OPTIONS[0]); };
   const saveEdit = () => { if (!editLabel.trim() || editingId === null) return; updateMutation.mutate({ id: editingId, label: editLabel, icon: editIcon, color: editColor }); };

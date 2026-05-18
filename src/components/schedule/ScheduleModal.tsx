@@ -67,9 +67,6 @@ export function ScheduleModal() {
       triggerToast();
       setTimeout(() => closeModal(), 200); // 토스트 살짝 보인 후 닫기
     },
-    onError: (err) => {
-      alert("일정 추가 실패: " + err.message);
-    },
   });
 
   const updateMutation = trpc.schedule.update.useMutation({
@@ -78,9 +75,6 @@ export function ScheduleModal() {
       utils.dashboard.stats.invalidate();
       triggerToast();
       setTimeout(() => closeModal(), 200);
-    },
-    onError: (err) => {
-      alert("일정 수정 실패: " + err.message);
     },
   });
 
