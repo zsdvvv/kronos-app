@@ -96,7 +96,7 @@ export const scheduleRouter = createRouter({
         color: z.string().optional(),
         isRepeating: z.boolean().optional(),
         repeatPattern: z.object({
-          type: z.enum(["daily", "weekly", "monthly", "custom"]),
+          type: z.enum(["hourly", "daily", "weekly", "monthly", "custom"]),
           interval: z.number().optional(),
           daysOfWeek: z.array(z.number()).optional(),
           endDate: z.string().optional(),
