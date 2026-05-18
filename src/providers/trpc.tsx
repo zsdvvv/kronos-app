@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: `${import.meta.env.VITE_API_URL || ""}/api/trpc`,
       transformer: superjson,
       headers() {
         const token = localStorage.getItem("local_auth_token");
