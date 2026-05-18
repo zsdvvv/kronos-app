@@ -41,7 +41,7 @@ export const categoryRouter = createRouter({
         isSystem: false,
       });
 
-      return { id: Number(result[0].insertId), ...input };
+      return { id: Number(result.insertId), ...input };
     }),
 
   update: publicQuery

@@ -60,13 +60,14 @@ export const localAuthRouter = createRouter({
         name: input.name || input.email.split("@")[0],
       });
 
+      const insertId = Number(result.insertId);
       const token = jwt.sign(
-        { userId: Number(result[0].insertId), type: "local" },
+        { userId: insertId, type: "local" },
         JWT_SECRET,
         { expiresIn: "30d" }
       );
 
-      return { token, user: { id: Number(result[0].insertId), email: input.email, name: input.name } };
+      return { token, user: { id: insertId, email: input.email, name: input.name } };
     }),
 
   login: publicQuery
