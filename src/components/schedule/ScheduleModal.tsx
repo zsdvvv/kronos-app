@@ -62,17 +62,15 @@ export function ScheduleModal() {
 
   const createMutation = trpc.schedule.create.useMutation({
     onSuccess: () => {
-      utils.schedule.list.invalidate();
-      utils.dashboard.stats.invalidate();
+      utils.invalidate(); // 전체 캐시 무효화로 확실히 갱신
       triggerToast();
-      setTimeout(() => closeModal(), 200); // 토스트 살짝 보인 후 닫기
+      setTimeout(() => closeModal(), 200);
     },
   });
 
   const updateMutation = trpc.schedule.update.useMutation({
     onSuccess: () => {
-      utils.schedule.list.invalidate();
-      utils.dashboard.stats.invalidate();
+      utils.invalidate(); // 전체 캐시 무효화
       triggerToast();
       setTimeout(() => closeModal(), 200);
     },

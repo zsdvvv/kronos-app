@@ -14,7 +14,11 @@ export const categoryRouter = createRouter({
       .where(
         or(
           eq(categories.isSystem, true),
-          ctx.user ? and(eq(categories.userId, ctx.user.id), eq(categories.isSystem, false)) : undefined
+          // 로그인 사용자: 본인 카테고리
+          ctx.user
+            ? and(eq(categories.userId, ctx.user.id), eq(categories.isSystem, false))
+            // 비로그인 사용자: userId=0 으로 만든 카테고리도 표시
+            : and(eq(categories.userId, 0), eq(categories.isSystem, false))
         )
       );
     return result;

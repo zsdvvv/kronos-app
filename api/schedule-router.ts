@@ -31,7 +31,8 @@ export const scheduleRouter = createRouter({
         conditions.push(gte(schedules.startTime, new Date(input.startDate)));
       }
       if (input?.endDate) {
-        conditions.push(lte(schedules.endTime, new Date(input.endDate)));
+        // startTime 기준으로 필터 (endTime이 범위 밖이어도 표시)
+        conditions.push(lte(schedules.startTime, new Date(input.endDate)));
       }
       if (input?.categoryId) {
         conditions.push(eq(schedules.categoryId, input.categoryId));
