@@ -8,19 +8,25 @@ export const categoryRouter = createRouter({
   list: publicQuery.query(async ({ ctx }) => {
     const db = getDb();
     // Get system categories + user-specific categories
-    const result = await db
-      .select()
-      .from(categories)
-      .where(
-        or(
-          eq(categories.isSystem, 1 as any),
-          // 로그인 사용자: 본인 카테고리
-          ctx.user
-            ? and(eq(categories.userId, ctx.user.id), eq(categories.isSystem, 0 as any))
-            // 비로그인 사용자: userId=0 으로 만든 카테고리도 표시
-            : and(eq(categories.userId, 0), eq(categories.isSystem, 0 as any))
-        )
-      );
+    // isSystem=1 인 카테고리 + 로그인 사용자의 개인 카테고리
+    let result;
+    if (ctx.user) {
+      result = await db
+        .select()
+        .from(categories)
+        .where(
+          or(
+            eq(categories.isSystem, 1 as any),
+            eq(categories.userId, ctx.user.id)
+          )
+        );
+    } else {
+      // 비로그인: 시스템 카테고리만 표시
+      result = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.isSystem, 1 as any));
+    }
     return result;
   }),
 
