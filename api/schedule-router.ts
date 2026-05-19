@@ -115,7 +115,7 @@ export const scheduleRouter = createRouter({
       // Auto-detect category from title if not provided
       let categoryId = input.categoryId;
       if (!categoryId && input.title) {
-        const allCats = await db.select().from(categories).where(eq(categories.isSystem, true));
+        const allCats = await db.select().from(categories).where(eq(categories.isSystem, 1 as any));
         const lowerTitle = input.title.toLowerCase();
         for (const cat of allCats) {
           if (lowerTitle.includes(cat.name) || lowerTitle.includes(cat.label)) {

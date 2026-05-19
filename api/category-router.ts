@@ -13,12 +13,12 @@ export const categoryRouter = createRouter({
       .from(categories)
       .where(
         or(
-          eq(categories.isSystem, true),
+          eq(categories.isSystem, 1 as any),
           // 로그인 사용자: 본인 카테고리
           ctx.user
-            ? and(eq(categories.userId, ctx.user.id), eq(categories.isSystem, false))
+            ? and(eq(categories.userId, ctx.user.id), eq(categories.isSystem, 0 as any))
             // 비로그인 사용자: userId=0 으로 만든 카테고리도 표시
-            : and(eq(categories.userId, 0), eq(categories.isSystem, false))
+            : and(eq(categories.userId, 0), eq(categories.isSystem, 0 as any))
         )
       );
     return result;
