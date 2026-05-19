@@ -11,10 +11,9 @@ import { Paths } from "@contracts/constants";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
-// ── CORS 설정 (Vercel 프론트엔드 허용) ─────────────────────
+// CORS - Vercel 프론트엔드 허용
 app.use("*", cors({
   origin: (origin) => {
-    // vercel.app 도메인 전체 허용 + localhost
     if (!origin) return "*";
     if (origin.endsWith(".vercel.app")) return origin;
     if (origin.includes("localhost")) return origin;
@@ -49,7 +48,6 @@ if (env.isProduction) {
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);
-
   const port = parseInt(process.env.PORT || "3000");
   serve({ fetch: app.fetch, port }, () => {
     console.log(`Server running on http://localhost:${port}/`);

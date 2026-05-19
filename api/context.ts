@@ -1,7 +1,10 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { User, LocalUser } from "@db/schema";
-import { authenticateRequest } from "./kimi/auth";
+import { verifySessionToken } from "./kimi/session";
+import { findUserByUnionId } from "./queries/users";
 import { verifyLocalToken } from "./local-auth-router";
+import { Session } from "@contracts/constants";
+import * as cookie from "cookie";
 
 export type TrpcContext = {
   req: Request;
@@ -15,14 +18,22 @@ export async function createContext(
 ): Promise<TrpcContext> {
   const ctx: TrpcContext = { req: opts.req, resHeaders: opts.resHeaders };
 
-  // Try OAuth first
+  // 1. 세션 쿠키로 인증 (Google OAuth 또는 기타)
   try {
-    ctx.user = await authenticateRequest(opts.req.headers);
+    const cookies = cookie.parse(opts.req.headers.get("cookie") || "");
+    const token = cookies[Session.cookieName];
+    if (token) {
+      const claim = await verifySessionToken(token);
+      if (claim) {
+        const user = await findUserByUnionId(claim.unionId);
+        if (user) ctx.user = user;
+      }
+    }
   } catch {
-    // OAuth not available
+    // 인증 실패 시 비로그인으로 처리
   }
 
-  // Try local auth
+  // 2. 로컬 인증 토큰
   if (!ctx.user) {
     try {
       const token = opts.req.headers.get("x-local-auth-token");
@@ -30,7 +41,6 @@ export async function createContext(
         const localUser = await verifyLocalToken(token);
         if (localUser) {
           ctx.localUser = { ...localUser, type: "local" };
-          // Also set ctx.user for middleware compatibility
           ctx.user = {
             id: localUser.id,
             unionId: `local_${localUser.id}`,
@@ -45,7 +55,7 @@ export async function createContext(
         }
       }
     } catch {
-      // Local auth not available
+      // 로컬 인증 실패 시 비로그인으로 처리
     }
   }
 
