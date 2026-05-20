@@ -102,7 +102,7 @@ function DayView({ schedules }: { schedules: any[] }) {
   };
 
   return (
-    <div className="flex-1 overflow-auto p-4 select-none">
+    <div className="flex-1 overflow-auto p-4 select-none" style={{ touchAction: "pan-y" }}>
       <div className="text-lg font-semibold mb-3" style={{ color: colors.text }}>
         {format(currentDate, "M월 d일 EEEE", { locale: ko })}
       </div>
@@ -436,7 +436,7 @@ function MonthView({ schedules }: { schedules: any[] }) {
   const handleMouseUp = (date: Date, e: React.MouseEvent) => {
     setIsDragging(false);
     if (dragStart && !isSameDay(dragStart, date)) {
-      // 범위 선택 완료 → 팝업 표시
+      // 범위 드래그 완료 → 팝업 표시
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
@@ -446,10 +446,14 @@ function MonthView({ schedules }: { schedules: any[] }) {
         });
       }
     } else {
-      // 단순 클릭
+      // 단순 클릭 → 바로 일정 추가
       setCurrentDate(date);
       setDragStart(null); setDragEnd(null);
       setPopupPos(null);
+      setCreateModalOpen(true, {
+        date: format(date, "yyyy-MM-dd"),
+        allDay: true,
+      });
     }
   };
 
@@ -477,9 +481,15 @@ function MonthView({ schedules }: { schedules: any[] }) {
       className="flex-1 overflow-auto p-4 select-none relative"
       onMouseLeave={() => { if (isDragging) setIsDragging(false); }}
     >
-      <p className="text-[10px] mb-2" style={{ color: colors.textMuted }}>
-        날짜 드래그로 기간 선택 후 일정 추가 | 날짜 클릭으로 이동
-      </p>
+      {/* 월 표시 */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold" style={{ color: colors.text, fontFamily: "Cormorant Garamond, serif" }}>
+          {format(currentDate, "yyyy년 M월", { locale: ko })}
+        </h2>
+        <p className="text-[10px]" style={{ color: colors.textMuted }}>
+          클릭: 일정 추가 | 드래그: 기간 선택
+        </p>
+      </div>
 
       <div className="grid grid-cols-7 gap-1">
         {weekDays.map((wd) => (

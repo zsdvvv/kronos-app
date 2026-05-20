@@ -115,9 +115,16 @@ function CategoryEditModal({ open, onClose, categories }: { open: boolean; onClo
   const [newIcon, setNewIcon] = useState("calendar-days");
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0]);
 
-  const createMutation = trpc.category.create.useMutation({ onSuccess: () => { utils.category.list.invalidate(); setNewLabel(""); } });
-  const updateMutation = trpc.category.update.useMutation({ onSuccess: () => { utils.category.list.invalidate(); setEditingId(null); } });
-  const deleteMutation = trpc.category.delete.useMutation({ onSuccess: () => utils.category.list.invalidate() });
+  const createMutation = trpc.category.create.useMutation({
+    onSuccess: () => { utils.invalidate(); setNewLabel(""); },
+    onError: (e) => { alert("추가 실패: " + e.message); },
+  });
+  const updateMutation = trpc.category.update.useMutation({
+    onSuccess: () => { utils.invalidate(); setEditingId(null); },
+  });
+  const deleteMutation = trpc.category.delete.useMutation({
+    onSuccess: () => { utils.invalidate(); },
+  });
 
   const startEdit = (cat: any) => { setEditingId(cat.id); setEditLabel(cat.label); setEditIcon(cat.icon || "calendar-days"); setEditColor(cat.color || COLOR_OPTIONS[0]); };
   const saveEdit = () => { if (!editLabel.trim() || editingId === null) return; updateMutation.mutate({ id: editingId, label: editLabel, icon: editIcon, color: editColor }); };
@@ -264,7 +271,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-3">
+      <ScrollArea className="flex-1 px-3" style={{ touchAction: "pan-y" }}>
         <div className="space-y-1 pb-3">
           {/* All + expand + checkbox */}
           <div className="w-full flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs transition-all"

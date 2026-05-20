@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useThemeStore } from "@/store/themeStore";
 import { useScheduleStore } from "@/store/scheduleStore";
 import { Sidebar } from "@/components/schedule/Sidebar";
@@ -8,48 +9,66 @@ import { ScheduleModal } from "@/components/schedule/ScheduleModal";
 import { ImportModal } from "@/components/import/ImportModal";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { HeaderBar } from "@/components/HeaderBar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Home() {
   const { colors } = useThemeStore();
   const { isGuruPanelOpen } = useScheduleStore();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div
       className="h-screen w-screen flex flex-col overflow-hidden transition-colors duration-300"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
-      {/* Top Header Bar */}
-      <HeaderBar />
+      <HeaderBar onToggleSidebar={() => setSidebarOpen((v) => !v)} sidebarOpen={sidebarOpen} />
 
-      {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <Sidebar />
+        {/* 사이드바 — 모바일에서 슬라이드 인/아웃 */}
+        <div
+          className="flex-shrink-0 transition-all duration-300 overflow-hidden"
+          style={{ width: sidebarOpen ? undefined : 0 }}
+        >
+          <Sidebar />
+        </div>
 
-        {/* Center Calendar Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* 사이드바 토글 탭 (항상 보임) */}
+        <button
+          className="flex-shrink-0 flex items-center justify-center w-4 border-r border-l z-10 transition-colors hover:opacity-70"
+          style={{
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            color: colors.textMuted,
+          }}
+          onClick={() => setSidebarOpen((v) => !v)}
+          title={sidebarOpen ? "사이드바 닫기" : "사이드바 열기"}
+        >
+          {sidebarOpen
+            ? <ChevronLeft size={12} />
+            : <ChevronRight size={12} />}
+        </button>
+
+        {/* 캘린더 영역 */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="flex-1 overflow-auto min-h-0">
             <CalendarView />
           </div>
-
-          {/* Bottom Dashboard */}
           <DashboardBar />
         </div>
 
-        {/* Right Guru Panel */}
+        {/* Guru 패널 */}
         {isGuruPanelOpen && (
-          <div className="w-80 border-l flex-shrink-0" style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}>
+          <div
+            className="w-80 border-l flex-shrink-0"
+            style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}
+          >
             <GuruPanel />
           </div>
         )}
       </div>
 
-      {/* Modals */}
       <ScheduleModal />
       <ImportModal />
-
-      {/* Theme Switcher Floating Button */}
       <ThemeSwitcher />
     </div>
   );

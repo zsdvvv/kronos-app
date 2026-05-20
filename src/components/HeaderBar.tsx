@@ -4,27 +4,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Plus,
-  MessageCircle,
-  LogIn,
-  LogOut,
-  User,
-  Bell,
-  Upload,
+  Search, ChevronLeft, ChevronRight, Clock, Plus,
+  MessageCircle, LogIn, LogOut, User, Bell, Upload, Menu,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfWeek, addDays } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useState, useEffect } from "react";
 
-export function HeaderBar() {
-  const { colors } = useThemeStore();
-  const { currentDate, viewMode, goToPrev, goToNext, goToToday, setCreateModalOpen, setGuruPanelOpen, setImportModalOpen, isGuruPanelOpen, searchQuery, setSearchQuery } = useScheduleStore();
-  const { user, isAuthenticated, logout } = useAuth();
+interface HeaderBarProps {
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+}
 
+export function HeaderBar({ onToggleSidebar, sidebarOpen }: HeaderBarProps) {
+  const { colors } = useThemeStore();
+  const {
+    currentDate, viewMode, weekCount, goToPrev, goToNext, goToToday,
+    setCreateModalOpen, setGuruPanelOpen, setImportModalOpen,
+    isGuruPanelOpen, searchQuery, setSearchQuery,
+  } = useScheduleStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -32,74 +31,96 @@ export function HeaderBar() {
     return () => clearInterval(timer);
   }, []);
 
-  const titleText =
-    viewMode === "day"
-      ? format(currentDate, "yyyy년 M월 d일 EEEE", { locale: ko })
-      : viewMode === "week"
-      ? `${format(currentDate, "yyyy년 M월", { locale: ko })} ${getWeekNumber(currentDate)}주차`
-      : format(currentDate, "yyyy년 M월", { locale: ko });
+  // 뷰 모드별 제목
+  const getTitleText = () => {
+    if (viewMode === "day") {
+      return format(currentDate, "yyyy년 M월 d일 EEEE", { locale: ko });
+    }
+    if (viewMode === "week") {
+      const count = weekCount || 1;
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const weekEnd = addDays(weekStart, 7 * count - 1);
+      if (count === 1) {
+        return `${format(weekStart, "M월 d일", { locale: ko })} ~ ${format(weekEnd, "M월 d일", { locale: ko })}`;
+      }
+      return `${format(weekStart, "M월 d일", { locale: ko })} ~ ${format(weekEnd, "M월 d일", { locale: ko })} (${count}주)`;
+    }
+    return format(currentDate, "yyyy년 M월", { locale: ko });
+  };
+
+  const today = new Date();
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const todayStr = `${today.getMonth() + 1}.${today.getDate()} ${weekdays[today.getDay()]}`;
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 border-b flex-shrink-0"
+      className="h-14 flex items-center justify-between px-3 border-b flex-shrink-0 gap-2"
       style={{ borderColor: colors.border, backgroundColor: colors.cardBg }}
     >
-      {/* Left Section */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Clock size={18} style={{ color: colors.primary }} />
-          <span className="font-mono text-sm font-medium">
+      {/* 왼쪽 */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* 모바일 사이드바 토글 */}
+        <button
+          className="p-1.5 rounded-lg md:hidden"
+          onClick={onToggleSidebar}
+          style={{ color: colors.textMuted }}
+        >
+          <Menu size={18} />
+        </button>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Clock size={16} style={{ color: colors.primary }} />
+          <span
+            className="text-xs font-mono tabular-nums hidden sm:block"
+            style={{ color: colors.primary, minWidth: "5rem" }}
+          >
             {format(currentTime, "HH:mm:ss")}
           </span>
         </div>
 
-        <div className="w-px h-6" style={{ backgroundColor: colors.border }} />
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={goToPrev}
-            style={{ color: colors.text }}
-          >
+        {/* 이전/다음/오늘 */}
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPrev}
+            style={{ color: colors.text }}>
             <ChevronLeft size={16} />
           </Button>
+
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto text-sm font-medium flex flex-col items-center px-2 py-1"
+            className="h-auto px-2 py-1 flex flex-col items-center leading-none"
             onClick={goToToday}
             style={{ color: colors.text }}
           >
-            <span className="text-xs font-semibold leading-tight">오늘</span>
-            <span className="text-[9px] font-normal leading-tight" style={{ color: colors.primary }}>
-              ({format(new Date(), "M.d EEE", { locale: ko })})
+            <span className="text-[11px] font-semibold">오늘</span>
+            <span className="text-[9px] mt-0.5" style={{ color: colors.primary }}>
+              ({todayStr})
             </span>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={goToNext}
-            style={{ color: colors.text }}
-          >
+
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNext}
+            style={{ color: colors.text }}>
             <ChevronRight size={16} />
           </Button>
         </div>
 
-        <h1 className="text-base font-semibold ml-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
-          {titleText}
+        {/* 현재 뷰 제목 */}
+        <h1
+          className="text-sm font-semibold hidden md:block truncate max-w-[200px]"
+          style={{ fontFamily: "Cormorant Garamond, serif", color: colors.text }}
+        >
+          {getTitleText()}
         </h1>
       </div>
 
-      {/* Center Section - Search */}
-      <div className="flex-1 max-w-md mx-4">
+      {/* 가운데 검색 */}
+      <div className="flex-1 max-w-xs mx-2 hidden sm:block">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: colors.textMuted }} />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2"
+            style={{ color: colors.textMuted }} />
           <Input
             placeholder="일정 검색..."
-            className="h-8 pl-8 text-sm"
+            className="h-8 pl-8 text-xs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ backgroundColor: colors.background, borderColor: colors.border, color: colors.text }}
@@ -107,80 +128,50 @@ export function HeaderBar() {
         </div>
       </div>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
+      {/* 오른쪽 */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Button variant="ghost" size="icon" className="h-8 w-8"
           onClick={() => setImportModalOpen(true)}
-          title="파일 가져오기"
-          style={{ color: colors.text }}
-        >
-          <Upload size={16} />
+          style={{ color: colors.text }}>
+          <Upload size={15} />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 relative"
+        <Button variant="ghost" size="icon" className="h-8 w-8"
           onClick={() => setGuruPanelOpen(!isGuruPanelOpen)}
-          title="AI 코치"
-          style={{ color: isGuruPanelOpen ? colors.primary : colors.text }}
-        >
-          <MessageCircle size={16} />
+          style={{ color: isGuruPanelOpen ? colors.primary : colors.text }}>
+          <MessageCircle size={15} />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 relative"
-          title="알림"
-          style={{ color: colors.text }}
-        >
-          <Bell size={16} />
+        <Button variant="ghost" size="icon" className="h-8 w-8"
+          style={{ color: colors.text }}>
+          <Bell size={15} />
         </Button>
 
-        <div className="w-px h-6 mx-1" style={{ backgroundColor: colors.border }} />
+        <div className="w-px h-5" style={{ backgroundColor: colors.border }} />
 
         {isAuthenticated && user ? (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <User size={14} style={{ color: colors.primary }} />
-              <span className="text-xs font-medium">{user.name || "사용자"}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={logout}
-              title="로그아웃"
-              style={{ color: colors.textMuted }}
-            >
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs hidden sm:block">{user.name || "사용자"}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={logout}
+              style={{ color: colors.textMuted }}>
               <LogOut size={14} />
             </Button>
           </div>
         ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1 text-xs"
+          <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs"
             onClick={() => window.location.href = "/login"}
-            style={{ color: colors.primary }}
-          >
-            <LogIn size={14} />
-            로그인
+            style={{ color: colors.primary }}>
+            <LogIn size={13} />
+            <span className="hidden sm:inline">로그인</span>
           </Button>
         )}
 
-        <Button
-          size="sm"
-          className="h-8 gap-1 text-xs ml-1"
+        <Button size="sm" className="h-8 gap-1 text-xs"
           onClick={() => setCreateModalOpen(true)}
-          style={{ backgroundColor: colors.primary, color: colors.cardBg }}
-        >
-          <Plus size={14} />
-          일정 추가
+          style={{ backgroundColor: colors.primary, color: colors.cardBg }}>
+          <Plus size={13} />
+          <span className="hidden sm:inline">일정 추가</span>
+          <span className="sm:hidden">추가</span>
         </Button>
       </div>
     </header>
