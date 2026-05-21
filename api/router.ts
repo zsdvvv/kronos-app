@@ -6,6 +6,7 @@ import { dashboardRouter } from "./dashboard-router";
 import { settingsRouter } from "./settings-router";
 import { importRouter } from "./import-router";
 import { guruRouter } from "./guru-router";
+import { inviteRouter } from "./invite-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -18,6 +19,7 @@ export const appRouter = createRouter({
   settings: settingsRouter,
   import: importRouter,
   guru: guruRouter,
+  invite: inviteRouter,
 });
 
 export type AppRouter = typeof appRouter;

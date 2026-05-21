@@ -1,10 +1,13 @@
 import type { Context } from "hono";
 import { setCookie } from "hono/cookie";
+import { eq } from "drizzle-orm";
 import { env } from "../lib/env";
 import { getSessionCookieOptions } from "../lib/cookies";
 import { Session } from "@contracts/constants";
 import { signSessionToken } from "../kimi/session";
 import { upsertUser } from "../queries/users";
+import { getDb } from "../queries/connection";
+import { invitations } from "@db/schema";
 
 export function createGoogleOAuthCallbackHandler() {
   return async (c: Context) => {
@@ -24,6 +27,7 @@ export function createGoogleOAuthCallbackHandler() {
     try {
       const redirectUri = atob(state);
 
+      // Google 토큰 교환
       const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -36,12 +40,10 @@ export function createGoogleOAuthCallbackHandler() {
         }).toString(),
       });
 
-      if (!tokenRes.ok) {
-        throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
-      }
-
+      if (!tokenRes.ok) throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
       const tokenData = await tokenRes.json() as { access_token: string };
 
+      // 사용자 프로필 가져오기
       const profileRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
@@ -49,13 +51,39 @@ export function createGoogleOAuthCallbackHandler() {
         id: string; name?: string; picture?: string; email?: string;
       };
 
+      // ── 초대 이메일 확인 ──────────────────────────────────
+      const email = profile.email || "";
+      const db = getDb();
+      const invite = await db
+        .select()
+        .from(invitations)
+        .where(eq(invitations.email, email))
+        .limit(1);
+
+      if (invite.length === 0) {
+        // 초대받지 않은 이메일 → 거절 페이지로
+        return c.redirect("/login?error=not_invited", 302);
+      }
+      // ─────────────────────────────────────────────────────
+
+      // 사용자 저장/업데이트
       await upsertUser({
         unionId: `google_${profile.id}`,
-        name: profile.name || profile.email || "Google User",
+        name: profile.name || email || "Google User",
+        email,
         avatar: profile.picture || null,
         lastSignInAt: new Date(),
       });
 
+      // 초대 상태를 accepted로 업데이트
+      if (invite[0].status === "pending") {
+        await db
+          .update(invitations)
+          .set({ status: "accepted", acceptedAt: new Date() })
+          .where(eq(invitations.email, email));
+      }
+
+      // 세션 쿠키 발급
       const token = await signSessionToken({
         unionId: `google_${profile.id}`,
         clientId: env.googleClientId,
@@ -70,7 +98,7 @@ export function createGoogleOAuthCallbackHandler() {
       return c.redirect("/", 302);
     } catch (err) {
       console.error("[Google OAuth] Callback failed", err);
-      return c.json({ error: "Google OAuth callback failed" }, 500);
+      return c.redirect("/login?error=server_error", 302);
     }
   };
 }

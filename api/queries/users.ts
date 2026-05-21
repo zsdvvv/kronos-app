@@ -20,11 +20,10 @@ export async function upsertUser(data: InsertUser) {
     ...data,
   };
 
-  if (
-    values.role === undefined &&
-    values.unionId &&
-    values.unionId === env.ownerUnionId
-  ) {
+  // ownerUnionId 또는 ownerEmail이 일치하면 admin
+  const isOwner = (values.unionId && values.unionId === env.ownerUnionId) ||
+    (values.email && values.email === env.ownerEmail);
+  if (values.role === undefined && isOwner) {
     values.role = "admin";
     updateSet.role = "admin";
   }

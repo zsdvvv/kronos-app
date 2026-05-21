@@ -122,3 +122,16 @@ export const appSettings = mysqlTable("app_settings", {
 });
 
 export type AppSetting = typeof appSettings.$inferSelect;
+
+// ─── Invitations (초대 기반 가입) ───
+export const invitations = mysqlTable("invitations", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  invitedBy: bigint("invitedBy", { mode: "number", unsigned: true }),
+  status: mysqlEnum("status", ["pending", "accepted"]).default("pending"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+});
+
+export type Invitation = typeof invitations.$inferSelect;
+export type InsertInvitation = typeof invitations.$inferInsert;

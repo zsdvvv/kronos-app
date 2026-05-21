@@ -11,4 +11,5 @@ export const env = {
   googleClientId: optional("GOOGLE_CLIENT_ID", optional("VITE_GOOGLE_CLIENT_ID", "")),
   googleClientSecret: optional("GOOGLE_CLIENT_SECRET", ""),
   ownerUnionId: optional("OWNER_UNION_ID", ""),
+  ownerEmail: optional("OWNER_EMAIL", ""),
 };

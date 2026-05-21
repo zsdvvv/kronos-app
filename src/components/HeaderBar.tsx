@@ -10,6 +10,7 @@ import {
 import { format, startOfWeek, addDays } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 
 interface HeaderBarProps {
   onToggleSidebar?: () => void;
@@ -24,6 +25,7 @@ export function HeaderBar({ onToggleSidebar, sidebarOpen }: HeaderBarProps) {
     isGuruPanelOpen, searchQuery, setSearchQuery,
   } = useScheduleStore();
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -151,6 +153,16 @@ export function HeaderBar({ onToggleSidebar, sidebarOpen }: HeaderBarProps) {
 
         {isAuthenticated && user ? (
           <div className="flex items-center gap-1.5">
+            {user.role === "admin" && (
+              <button
+                className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold hidden sm:block"
+                style={{ backgroundColor: colors.primary, color: "#fff" }}
+                onClick={() => navigate("/admin")}
+                title="관리자 패널"
+              >
+                관리자
+              </button>
+            )}
             <span className="text-xs hidden sm:block">{user.name || "사용자"}</span>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={logout}
               style={{ color: colors.textMuted }}>

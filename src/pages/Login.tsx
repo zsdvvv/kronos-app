@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, ArrowLeft, LogIn, UserPlus } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 function getGoogleOAuthUrl() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -38,6 +38,13 @@ export default function Login() {
   const [regPassword, setRegPassword] = useState("");
   const [regName, setRegName] = useState("");
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
+  const urlError = searchParams.get("error");
+  const errorMessages: Record<string, string> = {
+    not_invited: "초대받지 않은 이메일입니다. 관리자에게 초대를 요청하세요.",
+    server_error: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+  };
+  const oauthError = urlError ? errorMessages[urlError] || "로그인 중 오류가 발생했습니다." : null;
 
   const loginMutation = trpc.localAuth.login.useMutation({
     onSuccess: (data) => {
@@ -102,6 +109,14 @@ export default function Login() {
             당신의 시간을 예술로 만드세요
           </p>
         </div>
+
+        {/* OAuth 에러 메시지 */}
+        {oauthError && (
+          <div className="mb-3 px-3 py-2 rounded-lg text-xs text-center"
+            style={{ backgroundColor: "#fee2e2", color: "#dc2626", border: "1px solid #fecaca" }}>
+            {oauthError}
+          </div>
+        )}
 
         {/* Google OAuth Login */}
         <button
