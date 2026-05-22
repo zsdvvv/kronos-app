@@ -10,9 +10,9 @@ import { useNavigate, useSearchParams } from "react-router";
 
 function getGoogleOAuthUrl() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  // 콜백은 반드시 Render 백엔드로 가야 함
-  const apiBase = import.meta.env.VITE_API_URL || "";
-  const redirectUri = `${apiBase}/api/oauth/google/callback`;
+  // Render 백엔드 URL 직접 지정 (VITE_API_URL 없어도 동작)
+  const backendUrl = import.meta.env.VITE_API_URL || "https://wewill-backend.onrender.com";
+  const redirectUri = `${backendUrl}/api/oauth/google/callback`;
   const state = btoa(redirectUri);
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");

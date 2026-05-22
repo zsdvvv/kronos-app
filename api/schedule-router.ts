@@ -201,15 +201,10 @@ export const scheduleRouter = createRouter({
       return { success: true };
     }),
 
-  // 오늘 이후 미완료 일정 목록 (일정모음용)
+  // 미완료 일정 전체 목록 (일정모음용 - 날짜 제한 없음)
   upcoming: publicQuery.query(async ({ ctx }) => {
     const db = getDb();
-    const userId = ctx.user?.id ?? 0;
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
     const conditions = [
-      gte(schedules.startTime, now),
       eq(schedules.isCompleted, 0 as any),
     ];
     if (ctx.user) {
@@ -234,7 +229,7 @@ export const scheduleRouter = createRouter({
       .from(schedules)
       .where(and(...conditions))
       .orderBy(schedules.startTime)
-      .limit(50);
+      .limit(100);
 
     return result;
   }),
