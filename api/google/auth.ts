@@ -62,7 +62,8 @@ export function createGoogleOAuthCallbackHandler() {
 
       if (invite.length === 0) {
         // 초대받지 않은 이메일 → 거절 페이지로
-        return c.redirect("/login?error=not_invited", 302);
+        const frontendUrl2 = process.env.FRONTEND_URL || "https://wewill-three.vercel.app";
+      return c.redirect(`${frontendUrl2}/login?error=not_invited`, 302);
       }
       // ─────────────────────────────────────────────────────
 
@@ -95,10 +96,13 @@ export function createGoogleOAuthCallbackHandler() {
         maxAge: Session.maxAgeMs / 1000,
       });
 
-      return c.redirect("/", 302);
+      // 로그인 성공 후 프론트엔드로 이동
+      const frontendUrl = process.env.FRONTEND_URL || "https://wewill-three.vercel.app";
+      return c.redirect(frontendUrl, 302);
     } catch (err) {
       console.error("[Google OAuth] Callback failed", err);
-      return c.redirect("/login?error=server_error", 302);
+      const frontendUrl3 = process.env.FRONTEND_URL || "https://wewill-three.vercel.app";
+      return c.redirect(`${frontendUrl3}/login?error=server_error`, 302);
     }
   };
 }

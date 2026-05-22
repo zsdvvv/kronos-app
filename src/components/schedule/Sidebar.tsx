@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import {
   CalendarDays, Briefcase, BookOpen, Users, Dumbbell, User, Heart, Stethoscope,
   Layers, Plus, Calendar, CalendarRange, LayoutGrid, ChevronDown, ChevronRight,
-  Edit2, Trash2, Check, X,
+  Edit2, Trash2, Check, X, ListChecks, CheckSquare, Square, Pin, Pencil,
 } from "lucide-react";
+import { format, isToday } from "date-fns";
+import { ko } from "date-fns/locale";
 
 const iconMap: Record<string, React.ReactNode> = {
   "briefcase": <Briefcase size={14} />,
@@ -307,6 +309,7 @@ export function Sidebar() {
         </div>
       </ScrollArea>
 
+      <UpcomingSchedules />
       <MiniCalendar />
       <CategoryEditModal open={editModalOpen} onClose={() => setEditModalOpen(false)} categories={categories || []} />
     </aside>
@@ -342,6 +345,142 @@ function MiniCalendar() {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─── 일정모음 컴포넌트 ───────────────────────────────────
+function UpcomingSchedules() {
+  const { colors } = useThemeStore();
+  const { setSelectedScheduleId, setEditModalOpen, setCreateModalOpen } = useScheduleStore();
+  const utils = trpc.useUtils();
+
+  const [expanded, setExpanded] = useState(true);
+  const [pinnedIds, setPinnedIds] = useState<Set<number>>(new Set());
+  const [detailId, setDetailId] = useState<number | null>(null);
+
+  const { data: upcoming } = trpc.schedule.upcoming.useQuery();
+  const completeMutation = trpc.schedule.complete.useMutation({
+    onSuccess: () => utils.invalidate(),
+  });
+
+  const toggleComplete = (id: number, current: boolean) => {
+    completeMutation.mutate({ id, isCompleted: !current });
+  };
+
+  const togglePin = (id: number) => {
+    setPinnedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  // 고정 일정 먼저, 나머지는 날짜순
+  const sorted = [...(upcoming || [])].sort((a, b) => {
+    const aPin = pinnedIds.has(a.id) ? 0 : 1;
+    const bPin = pinnedIds.has(b.id) ? 0 : 1;
+    if (aPin !== bPin) return aPin - bPin;
+    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+  });
+
+  return (
+    <div className="border-t" style={{ borderColor: colors.border }}>
+      {/* 헤더 */}
+      <button
+        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:opacity-80 transition-opacity"
+        onClick={() => setExpanded(v => !v)}
+      >
+        <ListChecks size={13} style={{ color: colors.primary }} />
+        <span className="text-xs font-semibold flex-1" style={{ color: colors.text }}>일정모음</span>
+        <span className="text-[10px]" style={{ color: colors.textMuted }}>{sorted.length}</span>
+        {expanded ? <ChevronDown size={11} style={{ color: colors.textMuted }} /> : <ChevronRight size={11} style={{ color: colors.textMuted }} />}
+      </button>
+
+      {expanded && (
+        <div className="px-2 pb-2 space-y-1 max-h-64 overflow-y-auto" style={{ touchAction: "pan-y" }}>
+          {sorted.length === 0 && (
+            <p className="text-[10px] text-center py-3" style={{ color: colors.textMuted }}>예정된 일정이 없습니다</p>
+          )}
+          {sorted.map(s => {
+            const isPin = pinnedIds.has(s.id);
+            const isDetail = detailId === s.id;
+            const startDt = new Date(s.startTime);
+            const dateLabel = isToday(startDt)
+              ? `오늘 ${format(startDt, "HH:mm")}`
+              : format(startDt, "M.d(EEE) HH:mm", { locale: ko });
+
+            return (
+              <div key={s.id} className="rounded-lg overflow-hidden"
+                style={{ backgroundColor: colors.background, border: `1px solid ${isPin ? colors.primary : colors.border}` }}>
+                {/* 일정 행 */}
+                <div className="flex items-center gap-1.5 px-2 py-1.5">
+                  {/* 완료 체크박스 */}
+                  <button onClick={() => toggleComplete(s.id, !!s.isCompleted)} className="flex-shrink-0">
+                    {s.isCompleted
+                      ? <CheckSquare size={14} style={{ color: colors.primary }} />
+                      : <Square size={14} style={{ color: colors.border }} />}
+                  </button>
+                  {/* 제목 */}
+                  <button
+                    className="flex-1 text-left text-[11px] truncate transition-colors"
+                    style={{
+                      color: s.isCompleted ? colors.textMuted : colors.text,
+                      textDecoration: s.isCompleted ? "line-through" : "none",
+                    }}
+                    onClick={() => setDetailId(isDetail ? null : s.id)}
+                  >
+                    {s.title}
+                  </button>
+                  {/* 날짜 */}
+                  <span className="text-[9px] flex-shrink-0" style={{ color: colors.textMuted }}>{dateLabel}</span>
+                  {/* 고정 */}
+                  <button onClick={() => togglePin(s.id)} className="flex-shrink-0 opacity-60 hover:opacity-100">
+                    <Pin size={10} style={{ color: isPin ? colors.primary : colors.textMuted }} />
+                  </button>
+                </div>
+
+                {/* 세부 내용 */}
+                {isDetail && (
+                  <div className="px-3 pb-2 pt-1 border-t" style={{ borderColor: colors.border }}>
+                    {s.description && (
+                      <p className="text-[10px] mb-2" style={{ color: colors.textMuted }}>{s.description}</p>
+                    )}
+                    <p className="text-[10px] mb-2" style={{ color: colors.textMuted }}>
+                      {format(new Date(s.startTime), "yyyy.M.d HH:mm", { locale: ko })}
+                      {" ~ "}
+                      {format(new Date(s.endTime), "HH:mm", { locale: ko })}
+                    </p>
+                    <div className="flex gap-1 justify-end">
+                      <button
+                        className="text-[10px] px-2 py-1 rounded flex items-center gap-1"
+                        style={{ backgroundColor: `${colors.primary}20`, color: colors.primary }}
+                        onClick={() => togglePin(s.id)}
+                      >
+                        <Pin size={9} />{isPin ? "고정해제" : "상단고정"}
+                      </button>
+                      <button
+                        className="text-[10px] px-2 py-1 rounded flex items-center gap-1"
+                        style={{ backgroundColor: `${colors.primary}20`, color: colors.primary }}
+                        onClick={() => { setSelectedScheduleId(s.id); setEditModalOpen(true); setDetailId(null); }}
+                      >
+                        <Pencil size={9} />수정
+                      </button>
+                      <button
+                        className="text-[10px] px-2 py-1 rounded flex items-center gap-1"
+                        style={{ backgroundColor: "#dcfce7", color: "#166534" }}
+                        onClick={() => toggleComplete(s.id, false)}
+                      >
+                        <Check size={9} />완료
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

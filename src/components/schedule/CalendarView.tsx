@@ -38,6 +38,9 @@ export function CalendarView() {
     categoryId: selectedCategoryId ?? undefined,
     search: searchQuery || undefined,
     view: viewMode,
+  }, {
+    // 날짜가 바뀌면 항상 새로 fetch
+    staleTime: 0,
   });
 
   if (isLoading) {

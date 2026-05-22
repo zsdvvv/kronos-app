@@ -201,6 +201,44 @@ export const scheduleRouter = createRouter({
       return { success: true };
     }),
 
+  // 오늘 이후 미완료 일정 목록 (일정모음용)
+  upcoming: publicQuery.query(async ({ ctx }) => {
+    const db = getDb();
+    const userId = ctx.user?.id ?? 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const conditions = [
+      gte(schedules.startTime, now),
+      eq(schedules.isCompleted, 0 as any),
+    ];
+    if (ctx.user) {
+      conditions.push(eq(schedules.userId, ctx.user.id));
+    } else {
+      conditions.push(eq(schedules.userId, 0));
+    }
+
+    const result = await db
+      .select({
+        id: schedules.id,
+        title: schedules.title,
+        description: schedules.description,
+        startTime: schedules.startTime,
+        endTime: schedules.endTime,
+        color: schedules.color,
+        categoryId: schedules.categoryId,
+        isCompleted: schedules.isCompleted,
+        isRepeating: schedules.isRepeating,
+        alarmMinutes: schedules.alarmMinutes,
+      })
+      .from(schedules)
+      .where(and(...conditions))
+      .orderBy(schedules.startTime)
+      .limit(50);
+
+    return result;
+  }),
+
   batchCreate: publicQuery
     .input(
       z.array(
